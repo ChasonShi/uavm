@@ -1,19 +1,16 @@
 #!/bin/bash
-##SBATCH -p sm,1080
-##SBATCH -x sls-sm-1,sls-2080-[1,3],sls-1080-[1,2],sls-sm-[1,5,6]
-#SBATCH -p gpu
-#SBATCH -x sls-titan-[0-2]
-#SBATCH --gres=gpu:4
+#SBATCH -e ../../bash/full-%J.err
+#SBATCH -o ../../bash/full-%J.out
+#SBATCH --nodelist=gpu09
+#SBATCH --gres=gpu:0
 #SBATCH -c 4
 #SBATCH -n 1
 #SBATCH --mem=48000
 #SBATCH --job-name="vgg_fullatt"
-#SBATCH --output=../log/%j_vgg_fullatt.txt
+##SBATCH --output=../log/%j_vgg_fullatt.txt
 
-set -x
-# comment this line if not running on sls cluster
-. /data/sls/scratch/share-201907/slstoolchainrc
-source ../../venv/bin/activate
+
+
 export TORCH_HOME=../../pretrained_models
 
 s_embed_dim=1024 # high-layer embedding dimension, this is to make fair comparison with UAVM
@@ -48,7 +45,7 @@ feat_norm=True
 exp_dir=./exp/test01-vgg-${model}-lr${lr}-bs-${batch_size}-bal${bal}-mix${mixup}-ls${lrscheduler_start}-ld${lrscheduler_decay}-lst${lrscheduler_step}-lda${lr_adapt}-e${embed_dim}-se${s_embed_dim}-h${num_heads}-di${depth_i}-ds${depth_s}-asl${a_seq_len}-vsl${v_seq_len}-norm${feat_norm}-noise${noise}-r${r}
 mkdir -p $exp_dir
 
-CUDA_CACHE_DISABLE=1 python -W ignore ../../src/run.py --model ${model} --dataset ${dataset} \
+CUDA_VISIBLE_DEVICES=5,7 CUDA_CACHE_DISABLE=1 python -W ignore ../../src/run.py --model ${model} --dataset ${dataset} \
 --data-train ${tr_data} --data-val ${te_data} --exp-dir $exp_dir \
 --label-csv ./datafile/class_labels_indices_vgg.csv --n_class 309 \
 --loss CE --metrics acc \
